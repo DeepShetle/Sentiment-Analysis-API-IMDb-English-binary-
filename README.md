@@ -114,7 +114,7 @@ This starts the FastAPI app, PostgreSQL, and the MLflow tracking server together
 - Trained on movie reviews (IMDb); may generalize poorly to very different domains (e.g. product reviews, social media slang beyond the covered teencode dictionary).
 
 ## Roadmap / Status
-- [ ] Week 1 — Data loading, custom preprocessing, EDA
+- [x] Week 1 — Data loading, custom preprocessing, EDA
 - [ ] Week 2 — TF-IDF vectorization, model training, ablation study, MLflow registry
 - [ ] Week 3 — FastAPI serving, PostgreSQL logging
 - [ ] Week 4 — Dockerization, load testing, final documentation
