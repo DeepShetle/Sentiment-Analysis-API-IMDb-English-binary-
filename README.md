@@ -103,7 +103,7 @@ This starts the FastAPI app, PostgreSQL, and the MLflow tracking server together
 
 | Metric | Value |
 |---|---|
-| Baseline (TF-IDF, no custom preprocessing) — F1 | TBD |
+| Baseline (TF-IDF, no custom preprocessing) — F1 | 0.8951 |
 | With custom preprocessing (teencode + emoji) — F1 | TBD |
 | API throughput (req/s, local load test) | TBD |
 | API p95 latency | TBD |
