@@ -104,9 +104,11 @@ This starts the FastAPI app, PostgreSQL, and the MLflow tracking server together
 | Metric | Value |
 |---|---|
 | Baseline (TF-IDF, no custom preprocessing) — F1 | 0.8951 |
-| With custom preprocessing (teencode + emoji) — F1 | TBD |
+| With custom preprocessing (teencode + emoji) — F1 | 0.8969 |
 | API throughput (req/s, local load test) | TBD |
 | API p95 latency | TBD |
+
+> While yielding only a marginal improvement in model accuracy, the preprocessing pipeline is essential for standardizing messy API inputs, such as emojis and teencode.
 
 ## Limitations
 - English only — not tested or intended for other languages.
