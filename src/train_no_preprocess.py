@@ -150,7 +150,7 @@ result_entry = {
     "f1": round(f1, 4),
 }
 
-results_path = "reports/ablation_results.json"
+results_path = "reports/baseline_results.json"
 
 # Đọc file cũ nếu đã tồn tại, để append thay vì ghi đè
 if os.path.exists(results_path):
@@ -190,3 +190,6 @@ assert list(sample_check) == list(original_check), \
     "Model sau khi load lại phải cho kết quả dự đoán giống hệt model gốc"
 
 print("Xác nhận: load lại artifact thành công, dự đoán khớp với model gốc")
+
+
+
