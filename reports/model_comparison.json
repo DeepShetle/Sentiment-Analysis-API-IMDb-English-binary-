@@ -1,0 +1,17 @@
+{
+  "linear_svc": {
+    "accuracy": 0.8923,
+    "f1": 0.8934,
+    "train_time_seconds": 1.86
+  },
+  "random_forest": {
+    "accuracy": 0.8405,
+    "f1": 0.8404,
+    "train_time_seconds": 17.98
+  },
+  "logistic_regression": {
+    "accuracy": 0.8953,
+    "f1": 0.8969,
+    "train_time_seconds": null
+  }
+}
