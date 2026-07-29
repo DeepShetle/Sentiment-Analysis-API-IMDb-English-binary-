@@ -31,12 +31,15 @@ Key design decisions:
 - Every prediction is logged to PostgreSQL (input, output, model version, latency, timestamp), providing the raw data needed for future drift monitoring.
 
 ## Tech Stack
-- **Modeling:** scikit-learn (TF-IDF, Logistic Regression / other classifiers)
-- **Experiment tracking & model registry:** MLflow
+- **Modeling:** scikit-learn (TF-IDF, Logistic Regression, SVM, Random Forest)
+- **Experiment tracking & model registry:** MLflow (local, SQLite backend)
 - **Serving:** FastAPI
-- **Storage/logging:** PostgreSQL
+- **Storage/logging:** PostgreSQL (Dockerized, local development)
 - **Packaging:** Docker, docker-compose
-- **EDA:** pandas, matplotlib, wordcloud
+- **Preprocessing:** pandas, `emoji` library, regex
+- **EDA:** matplotlib, wordcloud
+- **Testing:** pytest
+
 
 ## Project Structure
 ```
@@ -89,17 +92,11 @@ Custom preprocessing handles noise commonly found in real-world English text:
 **`GET /model-info`** — returns current production model version, training metric, and training date.
 
 ## Getting Started
-
-```bash
-git clone <repo-url>
-cd sentiment-api
-docker compose up
-```
-This starts the FastAPI app, PostgreSQL, and the MLflow tracking server together.
+Coming in Week 4
 
 ## Results
 
-> To be filled in after Week 2 (ablation study) and Week 4 (load testing) are complete.
+> To be filled in after Week 4 (load testing) are complete.
 
 | Metric | Value |
 |---|---|
@@ -108,7 +105,7 @@ This starts the FastAPI app, PostgreSQL, and the MLflow tracking server together
 | API throughput (req/s, local load test) | TBD |
 | API p95 latency | TBD |
 
-> While yielding only a marginal improvement in model accuracy, the preprocessing pipeline is essential for standardizing messy API inputs, such as emojis and teencode.
+> While the accuracy improvement was marginal on this dataset, the preprocessing pipeline is expected to matter more for informal user input at inference time — this is a hypothesis to validate once real usage logs are available.
 
 ## Limitations
 - English only — not tested or intended for other languages.

@@ -5,3 +5,5 @@ emoji
 matplotlib
 wordcloud
 pytest 
+mlflow
+fastapi
