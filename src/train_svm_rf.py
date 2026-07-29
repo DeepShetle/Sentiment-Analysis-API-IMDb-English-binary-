@@ -1,4 +1,3 @@
-# src/train.py
 
 import json
 import time
@@ -12,9 +11,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import accuracy_score, f1_score
 
-RANDOM_STATE = 42
-TEST_SIZE = 0.2
-
+from config import RANDOM_STATE, TEST_SIZE, MAX_FEATURES
 # --- Load data & tái tạo lại đúng split đã dùng ở Ngày 6-7 ---
 df = pd.read_csv("data/processed/imdb_processed.csv")
 

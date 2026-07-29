@@ -1,8 +1,9 @@
 from load_data import load_imdb_data
 from sklearn.model_selection import train_test_split #Hàm chia data thành tập train và tập test
 
-RANDOM_STATE = 42 #Dùng để đảm bảo rằng kết quả chia train test là như nhau mỗi lần chạy
-TEST_SIZE = 0.2 #Dùng để xác định kích thước của tập test, ở đây là 20%
+from config import RANDOM_STATE, TEST_SIZE, MAX_FEATURES
+#RANDOM_STATE = 42 #Dùng để đảm bảo rằng kết quả chia train test là như nhau mỗi lần chạy
+#TEST_SIZE = 0.2 #Dùng để xác định kích thước của tập test, ở đây là 20%
 
 df = load_imdb_data("data/processed/imdb_processed.csv") 
 

@@ -3,10 +3,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
-
-RANDOM_STATE = 42
-TEST_SIZE = 0.2
-MAX_FEATURES = 10000
+from config import RANDOM_STATE, TEST_SIZE, MAX_FEATURES
 
 # --- Load data ---
 df = load_imdb_data("data/processed/imdb_processed.csv") 
@@ -113,5 +110,6 @@ with open("reports/ablation_results.json", "w") as f:
 import joblib
 import os
 
-joblib.dump(model_clean, "artifacts/model_clean.pkl")
+joblib.dump(model_clean, "artifacts/model_logreg_clean.pkl")
 joblib.dump(vectorizer_clean, "artifacts/vectorizer_clean.pkl")
+print("Save artifacts successully")
