@@ -4,6 +4,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from config import RANDOM_STATE, TEST_SIZE, MAX_FEATURES
+import time
 
 # --- Load data ---
 df = load_imdb_data("data/processed/imdb_processed.csv") 
@@ -52,8 +53,11 @@ X_test_vec = vectorizer_clean.transform(X_test)  # chỉ transform, không fit l
 
 # --- Train model — cấu hình giống hệt Ngày 6 ---
 # Baseline hội tụ ở max_iter = 1000 nên ko cần check lại nữa, train luôn
+start = time.time()
 model_clean = LogisticRegression(max_iter=1000, random_state=RANDOM_STATE)
 model_clean.fit(X_train_vec, y_train)
+train_time_logistic = time.time() - start
+print(f"  Done in {train_time_logistic:.2f}s")
 
 #---Đánh giá - accuracy + F1 ---
 
