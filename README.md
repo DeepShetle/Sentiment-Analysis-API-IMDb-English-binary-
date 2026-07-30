@@ -77,23 +77,7 @@ Custom preprocessing handles noise commonly found in real-world English text:
 - **HTML noise:** IMDb reviews contain leftover `<br />` tags from the original crawl; these are stripped before training.
 
 ## API Endpoints
-
-**`POST /predict`**
-```json
-// Request
-{ "text": "This movie was absolutely wonderful, great acting!" }
-
-// Response
-{
-  "sentiment": "positive",
-  "confidence": 0.94,
-  "model_version": "v2"
-}
-```
-
-**`GET /health`** — service liveness check, confirms the model is loaded.
-
-**`GET /model-info`** — returns current production model version, training metric, and training date.
+Coming in Week 3
 
 ## Getting Started
 Coming in Week 4

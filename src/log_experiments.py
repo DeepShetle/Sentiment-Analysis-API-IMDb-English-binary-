@@ -66,7 +66,7 @@ with mlflow.start_run(run_name="custom_preprocessing_logreg"):
     print("Run_id de dang ky Registry:", mlflow.active_run().info.run_id)
 
 # Run 3: SVM (Ngay 8) - khong con artifact .pkl, chi con so lieu
-with mlflow.start_run(run_name="svm_calibrated"):
+with mlflow.start_run(run_name="LinearSVC (not calibrated — Logistic Regression won, calibration step skipped)"):
     mlflow.log_param("preprocessing", "teencode + emoji + html cleaning")
     mlflow.log_param("model_type", "LinearSVC (calibrated)")
     mlflow.log_param("max_features", MAX_FEATURES)
