@@ -6,11 +6,11 @@
   },
   "custom_preprocessing": {
     "preprocessing": "teencode + emoji + html cleaning",
-    "accuracy": 0.8739,
-    "f1": 0.8762
+    "accuracy": 0.8953,
+    "f1": 0.8969
   },
   "improvement": {
-    "accuracy_delta": -0.0196,
-    "f1_delta": -0.0189
+    "accuracy_delta": 0.0018,
+    "f1_delta": 0.0018
   }
 }

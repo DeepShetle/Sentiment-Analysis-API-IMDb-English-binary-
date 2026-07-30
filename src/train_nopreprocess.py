@@ -1,5 +1,6 @@
 from load_data import load_imdb_data
 from sklearn.model_selection import train_test_split #Hàm chia data thành tập train và tập test
+import time
 
 from config import RANDOM_STATE, TEST_SIZE, MAX_FEATURES
 #RANDOM_STATE = 42 #Dùng để đảm bảo rằng kết quả chia train test là như nhau mỗi lần chạy
@@ -98,18 +99,22 @@ import warnings
 with warnings.catch_warnings():     #Bẫy lại warning để nó không chạy tiếp nếu model chưa hội tụ
     warnings.filterwarnings("error", category=Warning)      #Biến Warning thành lỗi
     try:
+        start = time.time()
         model_baseline = LogisticRegression(
             max_iter=1000,      #Chọn số vòng lặp tối đa để tìm bộ trọng số tối ưu
             random_state=RANDOM_STATE,
         )
         model_baseline.fit(X_train_vec, y_train)    #vì warning đã được coi là lỗi -> nếu xảy ra thì nhảy vào except
+        train_time_nopre = time.time() - start
         print("Model hội tụ thành công trong giới hạn max_iter=1000")
     except Warning as w:
         print(f"CẢNH BÁO: {w}")     #In ra warning
         print("Cân nhắc tăng max_iter (ví dụ 2000) — nếu tăng, phải dùng CÙNG giá trị này ở Ngày 7")     
         # Train lại bình thường (không raise) để vẫn có model dùng tiếp
+        start = time.time()
         model_baseline = LogisticRegression(max_iter=1000, random_state=RANDOM_STATE)
         model_baseline.fit(X_train_vec, y_train)
+        train_time_nopre = time.time() - start
 
 # Kiểm tra bắt buộc: model đã học được bao nhiêu "lớp" nhãn
 print(f"Các lớp model học được: {model_baseline.classes_}")
@@ -129,6 +134,7 @@ assert len(y_pred) == len(y_test), "Số dự đoán phải bằng số mẫu te
 acc = accuracy_score(y_test, y_pred)
 f1 = f1_score(y_test, y_pred, pos_label="positive")
 
+print(f"  Train done in {train_time_nopre:.2f}s")
 print(f"Baseline — Accuracy: {acc:.4f}, F1: {f1:.4f}")
 print("\nClassification report chi tiết:")
 print(classification_report(y_test, y_pred))

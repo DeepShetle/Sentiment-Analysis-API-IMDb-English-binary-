@@ -14,7 +14,7 @@ Given a movie review in English, the API predicts whether the sentiment is **pos
 [Training — run once]
 IMDb dataset → custom preprocessing (teencode + emoji normalization)
              → TF-IDF vectorization → model training/selection
-             → MLflow Model Registry (Production stage)
+             → alias champion
 
 [Serving — every request]
 Client → POST /predict
@@ -53,7 +53,11 @@ sentiment-api/
 ├── src/
 │   ├── load_data.py           # data loading + validation
 │   ├── preprocessing.py       # teencode + emoji normalization pipeline
-│   ├── train.py               # training + MLflow logging
+│   ├── train_nopreprocess.py               # train logistic baseline
+│   ├── train_logistic.py                   # train logistic with preprocessing
+│   ├── train_svm_rf.py                     # train svm and random forest with preprocessing
+│   ├── log_experiments.py                  # Log all 4 runs to MLflow
+│   ├── register_model.py                   # Register champion model to MLflow Registry
 │   └── config.py
 ├── app/
 │   ├── main.py                 # FastAPI app
@@ -73,23 +77,7 @@ Custom preprocessing handles noise commonly found in real-world English text:
 - **HTML noise:** IMDb reviews contain leftover `<br />` tags from the original crawl; these are stripped before training.
 
 ## API Endpoints
-
-**`POST /predict`**
-```json
-// Request
-{ "text": "This movie was absolutely wonderful, great acting!" }
-
-// Response
-{
-  "sentiment": "positive",
-  "confidence": 0.94,
-  "model_version": "v2"
-}
-```
-
-**`GET /health`** — service liveness check, confirms the model is loaded.
-
-**`GET /model-info`** — returns current production model version, training metric, and training date.
+Coming in Week 3
 
 ## Getting Started
 Coming in Week 4
@@ -107,6 +95,25 @@ Coming in Week 4
 
 > While the accuracy improvement was marginal on this dataset, the preprocessing pipeline is expected to matter more for informal user input at inference time — this is a hypothesis to validate once real usage logs are available.
 
+## Model Training & Experiment Tracking
+
+Three algorithms were trained and compared on the same preprocessed
+train/test split (`random_state=42`, `max_features=10000`):
+
+| Model               | Accuracy | F1     | Train time (s) |
+|---------------------|----------|--------|-----------------|
+| Logistic Regression | 0.8953   | 0.8969 | 0.55            |
+| LinearSVC (calibrated) | 0.8923 | 0.8934 | 1.86            |
+| Random Forest        | 0.8405   | 0.8404 | 17.98           |
+
+All experiments were logged to MLflow Tracking, and the best-performing
+model was registered in the MLflow Model Registry:
+
+**Registered model in MLflow Registry: `sentiment-classifier`, alias
+`champion` → Logistic Regression on `review_clean` (accuracy 0.8953,
+F1 0.8969) — outperforms SVM (0.8923/0.8934) and Random Forest
+(0.8405/0.8404) on both accuracy and F1.**
+
 ## Limitations
 - English only — not tested or intended for other languages.
 - Binary classification only (positive/negative); no neutral class, since the training data provides no neutral ground truth to evaluate against.
@@ -114,6 +121,6 @@ Coming in Week 4
 
 ## Roadmap / Status
 - [x] Week 1 — Data loading, custom preprocessing, EDA
-- [ ] Week 2 — TF-IDF vectorization, model training, ablation study, MLflow registry
+- [x] Week 2 — TF-IDF vectorization, model training, ablation study, MLflow registry
 - [ ] Week 3 — FastAPI serving, PostgreSQL logging
 - [ ] Week 4 — Dockerization, load testing, final documentation
