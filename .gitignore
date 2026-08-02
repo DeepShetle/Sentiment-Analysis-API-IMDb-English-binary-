@@ -2,3 +2,4 @@
 /venv
 mlflow.db
 mlruns/
+.env

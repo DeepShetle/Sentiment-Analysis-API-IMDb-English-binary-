@@ -7,3 +7,6 @@ wordcloud
 pytest 
 mlflow
 fastapi
+python-dotenv
+psycopg2-binary
+uvicorn
