@@ -76,3 +76,4 @@ def predict(request: PredictRequest, background_tasks: BackgroundTasks):
         model_version=MODEL_VERSION_LABEL,
         latency_ms=latency_ms,
     )
+#Bug trong in log lên localhost 8000 -> fix sớm
