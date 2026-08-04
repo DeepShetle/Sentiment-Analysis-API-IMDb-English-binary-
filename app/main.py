@@ -22,7 +22,7 @@ async def lifespan(app: FastAPI):
     mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
     print(f"Loading model from {model_uri} ...")
     start = time.time()
-    model = mlflow.pyfunc.load_model(model_uri)
+    model = mlflow.sklearn.load_model(model_uri)
     print(f"Model loaded in {time.time() - start:.2f}s")
     yield
     # (chỗ này để dọn dẹp resource khi app tắt, nếu cần sau này)
