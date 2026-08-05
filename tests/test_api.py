@@ -1,0 +1,43 @@
+import pytest
+
+def test_health_returns_model_loaded(client):
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert response.json()["model_loaded"] is True
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "This movie was absolutely fantastic!",
+        "Waste of time, terrible acting.",
+    ],
+)
+def test_predict_returns_valid_response(client, text):  #Test xem có trả về đúng dạng ko
+    response = client.post("/predict", json={"text": text})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["sentiment"] in ("positive", "negative")
+    assert 0.0 <= data["confidence"] <= 1.0
+    assert "model_version" in data
+
+def test_predict_rejects_empty_text(client): #Test khi gửi text rỗng
+    response = client.post("/predict", json={"text": ""})
+    assert response.status_code == 422
+
+def test_predict_rejects_missing_field(client): #Test khi gửi thiếu trường text
+    response = client.post("/predict", json={})
+    assert response.status_code == 422
+
+def test_predict_handles_teencode_and_emoji(client): #Test khi gửi text có teencode và emoji
+    response = client.post("/predict", json={"text": "lol this movie was great 😊 fr fr"})
+    assert response.status_code == 200
+
+def test_model_info_returns_metadata(client): #Test xem có lấy được metadata từ MLflow Registry không
+    response = client.get("/model-info")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["model_name"] == "sentiment-classifier"
+    assert data["alias"] == "champion"
+    assert data["f1_score"] is not None
+    assert data["accuracy"] is not None
+    assert data["version"] is not None

@@ -76,4 +76,37 @@ def predict(request: PredictRequest, background_tasks: BackgroundTasks):
         model_version=MODEL_VERSION_LABEL,
         latency_ms=latency_ms,
     )
-#Bug trong in log lên localhost 8000 -> fix sớm
+
+
+# pyrefly: ignore [missing-import]
+from mlflow.exceptions import MlflowException
+# pyrefly: ignore [missing-import]
+from mlflow.tracking import MlflowClient
+# pyrefly: ignore [missing-import]
+from fastapi import HTTPException
+
+from app.schemas import ModelInfoResponse
+
+_mlflow_client = MlflowClient()  # tạo 1 lần ở module level, không tạo mới mỗi request
+
+
+@app.get("/model-info", response_model=ModelInfoResponse)
+def model_info():
+    try:
+        version_info = _mlflow_client.get_model_version_by_alias(MODEL_NAME, MODEL_ALIAS)
+        run = _mlflow_client.get_run(version_info.run_id)
+    except MlflowException as e:
+        # Alias không tồn tại, model chưa được đăng ký, hoặc MLflow server không phản hồi
+        raise HTTPException(
+            status_code=503,
+            detail=f"Không lấy được metadata từ MLflow Registry: {e}",
+        )
+
+    return ModelInfoResponse(
+        model_name=MODEL_NAME,
+        alias=MODEL_ALIAS,
+        version=version_info.version,
+        f1_score=run.data.metrics.get("f1"),
+        accuracy=run.data.metrics.get("accuracy"),
+        trained_at=version_info.creation_timestamp,
+    )
