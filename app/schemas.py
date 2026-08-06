@@ -11,3 +11,11 @@ class PredictResponse(BaseModel):
     confidence: float
     model_version: str
     latency_ms: float
+
+class ModelInfoResponse(BaseModel):
+    model_name: str
+    alias: str
+    version: str
+    f1_score: float | None
+    accuracy: float | None
+    trained_at: int  # unix timestamp (ms), lấy trực tiếp từ MLflow

@@ -1,15 +1,20 @@
+from _pytest import compat
 import os
 import time
+import logging
 from contextlib import asynccontextmanager
 
 # pyrefly: ignore [missing-import]
 import mlflow
-from fastapi import FastAPI, BackgroundTasks
+# pyrefly: ignore [missing-import]
+from fastapi import FastAPI, BackgroundTasks, HTTPException
+# pyrefly: ignore [missing-import]
 from dotenv import load_dotenv
 from src.preprocessing import preprocess_pipeline, load_teencode_dict
-from app.schemas import PredictRequest, PredictResponse
+from app.schemas import PredictRequest, PredictResponse, ModelInfoResponse
 from app.db import insert_prediction_log
 
+logger = logging.getLogger(__name__)
 load_dotenv()
 
 MLFLOW_TRACKING_URI = os.environ["MLFLOW_TRACKING_URI"]
@@ -25,10 +30,14 @@ teencode_map = None
 async def lifespan(app: FastAPI):
     global model, teencode_map
     mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-    print(f"Loading model from {model_uri} ...")
+    logger.info(f"Loading model from {model_uri} ...")
     start = time.time()
-    model = mlflow.sklearn.load_model(model_uri)
-    print(f"Model loaded in {time.time() - start:.2f}s")
+    try:
+        model = mlflow.sklearn.load_model(model_uri)
+        logger.info(f"Model loaded in {time.time() - start:.2f}s")
+    except Exception as e:
+        logger.error(f"Failed to load model from {model_uri}: {e}")
+        model = None
     teencode_map = load_teencode_dict("teencode_dict.json")
     yield
     # (chỗ này để dọn dẹp resource khi app tắt, nếu cần sau này)
@@ -48,15 +57,21 @@ MODEL_VERSION_LABEL = f"{MODEL_NAME}@{MODEL_ALIAS}"  # đơn giản, dùng alias
 
 @app.post("/predict", response_model=PredictResponse)
 def predict(request: PredictRequest, background_tasks: BackgroundTasks):
+    if model is None:
+        raise HTTPException(status_code = 503, detail = "Model is not loaded. The service is not ready to serve predictions.")
+    
     start = time.time()
+    try:
+        # Bước 1: preprocess — DÙNG LẠI y hệt hàm đã dùng lúc training, không viết logic mới
+        cleaned_text = preprocess_pipeline(request.text, teencode_map)
 
-    # Bước 1: preprocess — DÙNG LẠI y hệt hàm đã dùng lúc training, không viết logic mới
-    cleaned_text = preprocess_pipeline(request.text, teencode_map)
-
-    # Bước 2: predict — model là Pipeline (TF-IDF + Logistic Regression), nhận thẳng list text
-    prediction = model.predict([cleaned_text])[0]
-    probabilities = model.predict_proba([cleaned_text])[0]
-    confidence = float(max(probabilities))  # xác suất của lớp được chọn
+        # Bước 2: predict — model là Pipeline (TF-IDF + Logistic Regression), nhận thẳng list text
+        prediction = model.predict([cleaned_text])[0]
+        probabilities = model.predict_proba([cleaned_text])[0]
+        confidence = float(max(probabilities))  # xác suất của lớp được chọn
+    except Exception as e:
+        logger.error(f"Prediction failed for input: {e}")
+        raise HTTPException(status_code = 500, detail = "Failed to process the request.")
 
     latency_ms = (time.time() - start) * 1000
 
@@ -75,4 +90,33 @@ def predict(request: PredictRequest, background_tasks: BackgroundTasks):
         confidence=confidence,
         model_version=MODEL_VERSION_LABEL,
         latency_ms=latency_ms,
+    )
+
+
+# pyrefly: ignore [missing-import]
+from mlflow.exceptions import MlflowException
+# pyrefly: ignore [missing-import]
+from mlflow.tracking import MlflowClient
+_mlflow_client = MlflowClient()  # tạo 1 lần ở module level, không tạo mới mỗi request
+
+
+@app.get("/model-info", response_model=ModelInfoResponse)
+def model_info():
+    try:
+        version_info = _mlflow_client.get_model_version_by_alias(MODEL_NAME, MODEL_ALIAS)
+        run = _mlflow_client.get_run(version_info.run_id)
+    except MlflowException as e:
+        # Alias không tồn tại, model chưa được đăng ký, hoặc MLflow server không phản hồi
+        raise HTTPException(
+            status_code=503,
+            detail=f"Không lấy được metadata từ MLflow Registry: {e}",
+        )
+
+    return ModelInfoResponse(
+        model_name=MODEL_NAME,
+        alias=MODEL_ALIAS,
+        version=version_info.version,
+        f1_score=run.data.metrics.get("f1"),
+        accuracy=run.data.metrics.get("accuracy"),
+        trained_at=version_info.creation_timestamp,
     )
