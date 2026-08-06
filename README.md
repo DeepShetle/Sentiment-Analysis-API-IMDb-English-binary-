@@ -77,14 +77,56 @@ Custom preprocessing handles noise commonly found in real-world English text:
 - **HTML noise:** IMDb reviews contain leftover `<br />` tags from the original crawl; these are stripped before training.
 
 ## API Endpoints
-Coming in Week 3
+
+**`POST /predict`** — classify the sentiment of a review.
+```json
+// Request
+{ "text": "This movie was absolutely wonderful, great acting!" }
+
+// Response (200 OK)
+{
+  "sentiment": "positive",
+  "confidence": 0.94,
+  "model_version": "sentiment-classifier@champion",
+  "latency_ms": 12.3
+}
+```
+Input is passed through the exact same `preprocess_pipeline()` used at training time before being vectorized and scored by the production model. Every successful prediction is logged asynchronously to PostgreSQL (via a background task) so it never adds latency to the response.
+
+**`GET /health`** — liveness check.
+```json
+{ "status": "ok", "model_loaded": true }
+```
+Confirms the service is up and the production model has been loaded into memory.
+
+**`GET /model-info`** — metadata about the model currently serving traffic, pulled live from the MLflow Registry (not hardcoded).
+```json
+{
+  "model_name": "sentiment-classifier",
+  "alias": "champion",
+  "version": "2",
+  "f1_score": 0.8969,
+  "accuracy": 0.8953,
+  "trained_at": 1732000000000
+}
+```
+
+**Error handling**
+
+| Status | When |
+|---|---|
+| `422 Unprocessable Entity` | Request body fails validation (missing/empty `text`) |
+| `503 Service Unavailable` | Model failed to load at startup (e.g. MLflow unreachable) — request rejected before touching a `None` model |
+| `500 Internal Server Error` | Unexpected failure during preprocessing/inference — the client receives a generic message; details are logged server-side, not exposed in the response |
+
+A logging failure (e.g. PostgreSQL temporarily down) never surfaces as an error to the client — `/predict` still returns the prediction normally, and the failure is only logged server-side. Logging is a monitoring concern, not a correctness dependency of the core feature.
 
 ## Getting Started
 Coming in Week 4
 
 ## Results
 
-> To be filled in after Week 4 (load testing) are complete.
+> To be filled in after Week 4 (load testing) is complete.
 
 | Metric | Value |
 |---|---|
@@ -103,7 +145,7 @@ train/test split (`random_state=42`, `max_features=10000`):
 | Model               | Accuracy | F1     | Train time (s) |
 |---------------------|----------|--------|-----------------|
 | Logistic Regression | 0.8953   | 0.8969 | 0.55            |
-| LinearSVC (calibrated) | 0.8923 | 0.8934 | 1.86            |
+| LinearSVC (uncalibrated) | 0.8923 | 0.8934 | 1.86            |
 | Random Forest        | 0.8405   | 0.8404 | 17.98           |
 
 All experiments were logged to MLflow Tracking, and the best-performing
