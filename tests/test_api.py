@@ -41,3 +41,16 @@ def test_model_info_returns_metadata(client): #Test xem có lấy được metad
     assert data["f1_score"] is not None
     assert data["accuracy"] is not None
     assert data["version"] is not None
+
+def test_predict_returns_503_when_model_not_loaded(client, monkeypatch):
+    monkeypatch.setattr("app.main.model", None)
+    response = client.post("/predict", json={"text": "great movie"})
+    assert response.status_code == 503
+
+def test_predict_survives_logging_failure(client, monkeypatch):
+    def broken_get_connection():
+        raise ConnectionError("Simulated DB failure")
+    monkeypatch.setattr("app.db.get_connection", broken_get_connection)
+
+    response = client.post("/predict", json={"text": "great movie"})
+    assert response.status_code == 200

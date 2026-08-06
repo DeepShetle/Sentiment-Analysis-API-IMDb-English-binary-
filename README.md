@@ -122,5 +122,5 @@ F1 0.8969) — outperforms SVM (0.8923/0.8934) and Random Forest
 ## Roadmap / Status
 - [x] Week 1 — Data loading, custom preprocessing, EDA
 - [x] Week 2 — TF-IDF vectorization, model training, ablation study, MLflow registry
-- [ ] Week 3 — FastAPI serving, PostgreSQL logging
+- [x] Week 3 — FastAPI serving, PostgreSQL logging
 - [ ] Week 4 — Dockerization, load testing, final documentation
