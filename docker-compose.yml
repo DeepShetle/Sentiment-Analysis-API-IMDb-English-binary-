@@ -23,10 +23,10 @@ services:
       - sh
       - -c
       - |
-        pip install --no-cache-dir mlflow && \
-        mlflow server --backend-store-uri sqlite:///mlflow.db \
-          --default-artifact-root /mlflow/mlruns \
-          --host 0.0.0.0 --port 5000 \
+        pip install --no-cache-dir mlflow &&\ 
+        mlflow server --backend-store-uri sqlite:///mlflow.db\
+          --default-artifact-root /mlflow/mlruns\
+          --host 0.0.0.0 --port 5000\
           --allowed-hosts mlflow,mlflow:*,localhost,localhost:*
     ports:
       - "5000:5000"
@@ -38,7 +38,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-      start_period: 40s
+      start_period: 90s
 
   app:
     build: .
@@ -49,6 +49,8 @@ services:
       MLFLOW_TRACKING_URI: http://mlflow:5000
       MODEL_NAME: sentiment-classifier
       MODEL_ALIAS: champion
+    volumes:
+      - ./mlruns:/mlflow/mlruns
     depends_on:
       postgres:
         condition: service_healthy
