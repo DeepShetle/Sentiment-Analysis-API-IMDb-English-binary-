@@ -31,14 +31,27 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - ./mlflow.db:/mlflow/mlflow.db      # mang theo registry ĐÃ CÓ từ Ngày 9, không tạo mới
-      - ./mlruns:/mlflow/mlruns             # mang theo artifact ĐÃ CÓ
+      - mlflow_data:/mlflow                 # named volume cho DB + artifacts
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000')"]
       interval: 5s
       timeout: 5s
       retries: 5
-      start_period: 90s
+      start_period: 300s
+
+  bootstrap:
+    build: .
+    command: ["python", "src/bootstrap.py"]
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MODEL_NAME: sentiment-classifier
+      MODEL_ALIAS: champion
+    volumes:
+      - ./artifacts:/app/artifacts          # mount .pkl files tu host
+      - mlflow_data:/mlflow                 # share mlflow artifacts folder
+    depends_on:
+      mlflow:
+        condition: service_healthy
 
   app:
     build: .
@@ -50,8 +63,10 @@ services:
       MODEL_NAME: sentiment-classifier
       MODEL_ALIAS: champion
     volumes:
-      - ./mlruns:/mlflow/mlruns
+      - mlflow_data:/mlflow                 # MLflow can write cache/metadata here
     depends_on:
+      bootstrap:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
       mlflow:
@@ -59,3 +74,4 @@ services:
 
 volumes:
   postgres_data:
+  mlflow_data:
