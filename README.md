@@ -122,20 +122,37 @@ Confirms the service is up and the production model has been loaded into memory.
 A logging failure (e.g. PostgreSQL temporarily down) never surfaces as an error to the client — `/predict` still returns the prediction normally, and the failure is only logged server-side. Logging is a monitoring concern, not a correctness dependency of the core feature.
 
 ## Getting Started
-Coming in Week 4
+
+Requires Docker Desktop.
+
+\`\`\`bash
+git clone <https://github.com/DeepShetle/Sentiment-Analysis-API-IMDb-English-binary-.git>
+cd sentiment-api
+docker compose up
+\`\`\`
+
+This starts PostgreSQL, MLflow (tracking + registry), a one-time bootstrap job
+that registers the pre-trained model, and the FastAPI app — all in one command.
+First run may take a few minutes while the bootstrap job registers the model
+and MLflow installs its dependencies. Once ready, visit:
+
+- `http://localhost:8000/docs` — interactive API docs (Swagger UI)
+- `http://localhost:5000` — MLflow UI (experiment comparison, model registry)
+\`\`\`
 
 ## Results
-
-> To be filled in after Week 4 (load testing) is complete.
 
 | Metric | Value |
 |---|---|
 | Baseline (TF-IDF, no custom preprocessing) — F1 | 0.8951 |
 | With custom preprocessing (teencode + emoji) — F1 | 0.8969 |
-| API throughput (req/s, local load test) | TBD |
-| API p95 latency | TBD |
+| API throughput (req/s, local load test) | 135 req/s |
+| API p95 latency | 71 ms |
 
 > While the accuracy improvement was marginal on this dataset, the preprocessing pipeline is expected to matter more for informal user input at inference time — this is a hypothesis to validate once real usage logs are available.
+> Tested locally via Locust (50 concurrent users, 2-minute run) on a single machine
+> Running the full Docker Compose stack (app, MLflow, PostgreSQL) alongside the load
+> Generator — not representative of production infrastructure with dedicated resources.
 
 ## Model Training & Experiment Tracking
 
@@ -165,4 +182,4 @@ F1 0.8969) — outperforms SVM (0.8923/0.8934) and Random Forest
 - [x] Week 1 — Data loading, custom preprocessing, EDA
 - [x] Week 2 — TF-IDF vectorization, model training, ablation study, MLflow registry
 - [x] Week 3 — FastAPI serving, PostgreSQL logging
-- [ ] Week 4 — Dockerization, load testing, final documentation
+- [x] Week 4 — Dockerization, load testing, final documentation

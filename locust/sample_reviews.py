@@ -6,4 +6,6 @@ SAMPLE_REVIEWS = [
     "A masterpiece of modern cinema, beautifully shot and acted.",
     "idk why everyone hates this movie, I thought it was decent tbh",
     "Boring from start to finish, wouldn't watch again.",
-    "The cinematography was breathtaking and the story kept me hooked."]
+    "The cinematography was breathtaking and the story kept me hooked.",
+    "This is a waste of time. I would not recommend this movie to anyone.",
+    ]
