@@ -10,3 +10,4 @@ fastapi
 python-dotenv
 psycopg2-binary
 uvicorn
+locust
