@@ -11,24 +11,31 @@ Given a movie review in English, the API predicts whether the sentiment is **pos
 ## Architecture
 
 ```
-[Training — run once]
+[Training — Local environment]
 IMDb dataset → custom preprocessing (teencode + emoji normalization)
              → TF-IDF vectorization → model training/selection
-             → alias champion
+             → log models & metrics to local MLflow Tracking
 
-[Serving — every request]
+[Deployment & Serving — Docker Compose]
+1. mlflow (container)     : MLflow Server + SQLite + local artifact storage.
+2. bootstrap (container)  : One-time job. Registers the best pre-trained model (from local /artifacts directory) to MLflow Model Registry as 'champion'.
+3. postgres (container)   : Database for API request/response logging.
+4. app (container)        : FastAPI application.
+
 Client → POST /predict
-       → preprocess_pipeline() (identical function used at training time)
-       → vectorize using the SAME fitted vectorizer from training
-       → model.predict()
-       → log request/response to PostgreSQL
+       → [app] Fetches champion model & vectorizer from MLflow Registry (cached at startup)
+       → [app] preprocess_pipeline() (identical function used at training time)
+       → [app] vectorize using the SAME fitted vectorizer
+       → [app] model.predict()
+       → [app] log request/response asynchronously to PostgreSQL
        → return {sentiment, confidence, model_version}
 ```
 
 Key design decisions:
-- The exact same `preprocess_pipeline()` function is reused at both training and serving time, to avoid training-serving skew.
-- The TF-IDF vectorizer is persisted and reloaded at serving time — never refit — so the feature space always matches the trained model.
-- Every prediction is logged to PostgreSQL (input, output, model version, latency, timestamp), providing the raw data needed for future drift monitoring.
+- **Separation of Concerns:** MLflow handles model versioning and registry, PostgreSQL handles application-level logging, and FastAPI handles serving.
+- **Training-Serving Skew Prevention:** The exact same `preprocess_pipeline()` function is reused at both training and serving time. The TF-IDF vectorizer is persisted and reloaded at serving time (never refit).
+- **Asynchronous Logging:** Every prediction is logged to PostgreSQL (input, output, model version, latency, timestamp) in a background task, ensuring it never adds latency to the client response. Logging failures do not fail the prediction request.
+- **Dynamic Model Loading:** The FastAPI app fetches the "champion" model directly from the MLflow registry at startup instead of hardcoding a specific file path. A bootstrap container seeds this registry on startup.
 
 ## Tech Stack
 - **Modeling:** scikit-learn (TF-IDF, Logistic Regression, SVM, Random Forest)
@@ -38,35 +45,47 @@ Key design decisions:
 - **Packaging:** Docker, docker-compose
 - **Preprocessing:** pandas, `emoji` library, regex
 - **EDA:** matplotlib, wordcloud
-- **Testing:** pytest
+- **Testing:** pytest, locust
 
 
 ## Project Structure
 ```
 sentiment-api/
+├── app/
+│   ├── main.py                # FastAPI app & endpoints
+│   ├── schemas.py             # Pydantic request/response models
+│   └── db.py                  # PostgreSQL connection
+├── artifacts/                 # Serialized models and vectorizers (.pkl)
 ├── data/
-│   ├── raw/                  # original IMDb CSV (not committed)
-│   └── processed/            # preprocessed dataset
+│   ├── raw/                   # Original IMDb CSV (not committed)
+│   └── processed/             # Preprocessed dataset
+├── locust/                    # Load testing scripts
+│   ├── locustfile.py
+│   └── sample_reviews.py
 ├── notebooks/
 │   ├── eda_raw.ipynb          # EDA before preprocessing
 │   └── eda_processed.ipynb    # EDA after preprocessing (comparison)
+├── reports/                   # Performance metrics, loadtest results, and EDA charts
+├── sql/
+│   └── init.sql               # PostgreSQL initialization script
 ├── src/
-│   ├── load_data.py           # data loading + validation
-│   ├── preprocessing.py       # teencode + emoji normalization pipeline
-│   ├── train_nopreprocess.py               # train logistic baseline
-│   ├── train_logistic.py                   # train logistic with preprocessing
-│   ├── train_svm_rf.py                     # train svm and random forest with preprocessing
-│   ├── log_experiments.py                  # Log all 4 runs to MLflow
-│   ├── register_model.py                   # Register champion model to MLflow Registry
-│   └── config.py
-├── app/
-│   ├── main.py                 # FastAPI app
-│   ├── schemas.py               # Pydantic request/response models
-│   └── db.py                    # PostgreSQL connection
-├── teencode_dict.json
-├── docker-compose.yml
-├── Dockerfile
-├── requirements.txt
+│   ├── bootstrap.py           # Registers champion model to MLflow on Docker startup
+│   ├── config.py
+│   ├── load_data.py           # Data loading + validation
+│   ├── log_experiments.py     # Log all 4 runs to MLflow
+│   ├── preprocessing.py       # Teencode + emoji normalization pipeline
+│   ├── register_model.py      # Register champion model to MLflow Registry (local script)
+│   ├── train_logistic.py      # Train logistic with preprocessing
+│   ├── train_nopreprocess.py  # Train logistic baseline
+│   └── train_svm_rf.py        # Train SVM and Random Forest with preprocessing
+├── tests/
+│   ├── conftest.py
+│   ├── test_api.py            # Integration tests for FastAPI endpoints
+│   └── test_preprocessing.py  # Unit tests for preprocessing logic
+├── teencode_dict.json         # Dictionary for normalizing slang/abbreviations
+├── docker-compose.yml         # Defines MLflow, Postgres, App, and Bootstrap services
+├── Dockerfile                 # Docker image for both FastAPI app and Bootstrap script
+├── requirements.txt           # Python dependencies
 └── README.md
 ```
 
@@ -125,11 +144,11 @@ A logging failure (e.g. PostgreSQL temporarily down) never surfaces as an error 
 
 Requires Docker Desktop.
 
-\`\`\`bash
-git clone <https://github.com/DeepShetle/Sentiment-Analysis-API-IMDb-English-binary-.git>
+```bash
+git clone https://github.com/DeepShetle/Sentiment-Analysis-API-IMDb-English-binary-.git sentiment-api
 cd sentiment-api
 docker compose up
-\`\`\`
+```
 
 This starts PostgreSQL, MLflow (tracking + registry), a one-time bootstrap job
 that registers the pre-trained model, and the FastAPI app — all in one command.
