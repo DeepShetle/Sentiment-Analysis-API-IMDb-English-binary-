@@ -100,7 +100,7 @@ with mlflow.start_run(run_name="custom_preprocessing_svm"):
     mlflow.log_param("random_state", RANDOM_STATE)
     mlflow.log_metric("accuracy", 0.8923)
     mlflow.log_metric("f1", 0.8934)
-    mlflow.log_metric("train_time_seconds", 2.28)
+    mlflow.log_metric("train_time_seconds", 1.86)
     # Do not log_model because this model underperforms Logistic Regression, only for UI display
 
 # Run 4: Random Forest (Hardcoded for UI display)

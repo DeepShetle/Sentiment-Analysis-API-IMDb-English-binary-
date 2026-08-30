@@ -2,6 +2,7 @@
 Day 9 - Step 6-8: Register the best model into MLflow Model Registry,
 assign 'champion' alias, and verify loading the model from the Registry.
 """
+# Deprecated — replaced by src/bootstrap.py for the Docker workflow. Kept for reference/local dev only.
 
 import mlflow
 from mlflow import MlflowClient

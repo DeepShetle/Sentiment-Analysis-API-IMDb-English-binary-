@@ -1,4 +1,3 @@
-from _pytest import compat
 import os
 import time
 import logging
