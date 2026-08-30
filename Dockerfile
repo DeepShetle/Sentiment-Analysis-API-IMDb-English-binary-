@@ -1,20 +1,20 @@
-#file text để tạo môi trường cho ứng dụng
+# Text file to define the environment for the application
 
 FROM python:3.12-slim
-# Xác định base image để xây app
+# Define the base image to build the app
 
 WORKDIR /app    
-# Thư mục làm việc mặc định là /app
+# Default working directory is /app
 
-# Cài dependencies trước, tách riêng khỏi COPY code —
-# tận dụng Docker layer cache: nếu chỉ sửa code, không sửa requirements.txt,
-# bước pip install không phải chạy lại (build nhanh hơn nhiều)
+# Install dependencies first, separate from COPY code —
+# leverage Docker layer cache: if only code is modified, not requirements.txt,
+# the pip install step won't run again (much faster build)
 COPY requirements.txt .
-# Copy file chứa thư viện cần dùng vào thư mục hiện tại "." (Ở đây là /app)
+# Copy requirements file to the current directory "." (which is /app)
 RUN pip install --no-cache-dir -r requirements.txt
-# Tải về, không lưu cache để tối ưu dung lượng  
+# Download and install, no cache to optimize image size
 
-# Copy code cần thiết cho runtime — KHÔNG copy notebooks/, data/raw/ (không cần lúc serving)
+# Copy necessary code for runtime — DO NOT copy notebooks/, data/raw/ (not needed for serving)
 COPY app/ ./app/
 COPY src/ ./src/
 COPY teencode_dict.json .

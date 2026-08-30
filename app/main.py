@@ -21,7 +21,7 @@ MLFLOW_TRACKING_URI = os.environ["MLFLOW_TRACKING_URI"]
 MODEL_NAME = os.environ["MODEL_NAME"]
 MODEL_ALIAS = os.environ["MODEL_ALIAS"]
 
-model = None  # sẽ được gán lúc app khởi động
+model = None  # will be assigned during app startup
 model_uri = f"models:/{MODEL_NAME}@{MODEL_ALIAS}"
 
 
@@ -40,7 +40,7 @@ async def lifespan(app: FastAPI):
         model = None
     teencode_map = load_teencode_dict("teencode_dict.json")
     yield
-    # (chỗ này để dọn dẹp resource khi app tắt, nếu cần sau này)
+    # (place to cleanup resources when app shuts down, if needed in the future)
 
 
 app = FastAPI(title="Sentiment Analysis API", lifespan=lifespan)
@@ -53,7 +53,7 @@ def health():
         "model_loaded": model is not None,
     }
 
-MODEL_VERSION_LABEL = f"{MODEL_NAME}@{MODEL_ALIAS}"  # đơn giản, dùng alias làm nhãn version
+MODEL_VERSION_LABEL = f"{MODEL_NAME}@{MODEL_ALIAS}"  # simple, use alias as version label
 
 @app.post("/predict", response_model=PredictResponse)
 def predict(request: PredictRequest, background_tasks: BackgroundTasks):
@@ -62,20 +62,20 @@ def predict(request: PredictRequest, background_tasks: BackgroundTasks):
     
     start = time.time()
     try:
-        # Bước 1: preprocess — DÙNG LẠI y hệt hàm đã dùng lúc training, không viết logic mới
+        # Step 1: preprocess — REUSE the exact function used during training, no new logic
         cleaned_text = preprocess_pipeline(request.text, teencode_map)
 
-        # Bước 2: predict — model là Pipeline (TF-IDF + Logistic Regression), nhận thẳng list text
+        # Step 2: predict — model is a Pipeline (TF-IDF + Logistic Regression), accepts a list of text directly
         prediction = model.predict([cleaned_text])[0]
         probabilities = model.predict_proba([cleaned_text])[0]
-        confidence = float(max(probabilities))  # xác suất của lớp được chọn
+        confidence = float(max(probabilities))  # probability of the chosen class
     except Exception as e:
         logger.error(f"Prediction failed for input: {e}")
         raise HTTPException(status_code = 500, detail = "Failed to process the request.")
 
     latency_ms = (time.time() - start) * 1000
 
-    # Bước 3: ghi log — chạy NGẦM sau khi response đã trả, không làm chậm client
+    # Step 3: logging — runs in BACKGROUND after response is returned, does not slow down client
     background_tasks.add_task(
         insert_prediction_log,
         input_text=request.text,
@@ -97,7 +97,7 @@ def predict(request: PredictRequest, background_tasks: BackgroundTasks):
 from mlflow.exceptions import MlflowException
 # pyrefly: ignore [missing-import]
 from mlflow.tracking import MlflowClient
-_mlflow_client = MlflowClient()  # tạo 1 lần ở module level, không tạo mới mỗi request
+_mlflow_client = MlflowClient()  # instantiate once at module level, not per request
 
 
 @app.get("/model-info", response_model=ModelInfoResponse)
@@ -106,10 +106,10 @@ def model_info():
         version_info = _mlflow_client.get_model_version_by_alias(MODEL_NAME, MODEL_ALIAS)
         run = _mlflow_client.get_run(version_info.run_id)
     except MlflowException as e:
-        # Alias không tồn tại, model chưa được đăng ký, hoặc MLflow server không phản hồi
+        # Alias doesn't exist, model not registered, or MLflow server not responding
         raise HTTPException(
             status_code=503,
-            detail=f"Không lấy được metadata từ MLflow Registry: {e}",
+            detail=f"Failed to fetch metadata from MLflow Registry: {e}",
         )
 
     return ModelInfoResponse(

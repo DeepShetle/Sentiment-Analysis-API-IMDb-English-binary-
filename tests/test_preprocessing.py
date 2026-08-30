@@ -10,7 +10,7 @@ def test_normalize_teencode_basic():
 def test_normalize_teencode_no_partial_match():
     teencode_map = {"lol": "laugh out loud"}
     result = normalize_teencode("i love lollipop candy", teencode_map)
-    assert "laugh out loud" not in result  # không được match nhầm trong "lollipop"
+    assert "laugh out loud" not in result  # should not match partially inside "lollipop"
 
 def test_normalize_teencode_case_insensitive():
     teencode_map = {"lol": "laugh out loud"}
@@ -20,7 +20,7 @@ def test_normalize_teencode_case_insensitive():
 def test_normalize_teencode_unknown_slang_unchanged():
     teencode_map = {"lol": "laugh out loud"}
     result = normalize_teencode("this uses j4f which is not in dict", teencode_map)
-    assert "j4f" in result  # từ không có trong dict giữ nguyên
+    assert "j4f" in result  # unknown slang remains unchanged
 
 @pytest.mark.parametrize("raw,expected_removed", [
     ("great movie<br />", "<br"),

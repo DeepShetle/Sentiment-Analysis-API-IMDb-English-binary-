@@ -31,7 +31,7 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - mlflow_data:/mlflow                 # named volume cho DB + artifacts
+      - mlflow_data:/mlflow                 # named volume for DB + artifacts
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000')"]
       interval: 5s
@@ -47,7 +47,7 @@ services:
       MODEL_NAME: sentiment-classifier
       MODEL_ALIAS: champion
     volumes:
-      - ./artifacts:/app/artifacts          # mount .pkl files tu host
+      - ./artifacts:/app/artifacts          # mount .pkl files from host
       - mlflow_data:/mlflow                 # share mlflow artifacts folder
     depends_on:
       mlflow:
