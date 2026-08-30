@@ -12,7 +12,7 @@ def test_health_returns_model_loaded(client):
         "Waste of time, terrible acting.",
     ],
 )
-def test_predict_returns_valid_response(client, text):  #Test xem có trả về đúng dạng ko
+def test_predict_returns_valid_response(client, text):  # Test if response has valid format
     response = client.post("/predict", json={"text": text})
     assert response.status_code == 200
     data = response.json()
@@ -20,19 +20,19 @@ def test_predict_returns_valid_response(client, text):  #Test xem có trả về
     assert 0.0 <= data["confidence"] <= 1.0
     assert "model_version" in data
 
-def test_predict_rejects_empty_text(client): #Test khi gửi text rỗng
+def test_predict_rejects_empty_text(client): # Test sending empty text
     response = client.post("/predict", json={"text": ""})
     assert response.status_code == 422
 
-def test_predict_rejects_missing_field(client): #Test khi gửi thiếu trường text
+def test_predict_rejects_missing_field(client): # Test missing 'text' field
     response = client.post("/predict", json={})
     assert response.status_code == 422
 
-def test_predict_handles_teencode_and_emoji(client): #Test khi gửi text có teencode và emoji
+def test_predict_handles_teencode_and_emoji(client): # Test text with teencode and emoji
     response = client.post("/predict", json={"text": "lol this movie was great 😊 fr fr"})
     assert response.status_code == 200
 
-def test_model_info_returns_metadata(client): #Test xem có lấy được metadata từ MLflow Registry không
+def test_model_info_returns_metadata(client): # Test fetching metadata from MLflow Registry
     response = client.get("/model-info")
     assert response.status_code == 200
     data = response.json()

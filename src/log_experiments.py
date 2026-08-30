@@ -9,13 +9,14 @@ from sklearn.pipeline import Pipeline
 RANDOM_STATE = 42
 MAX_FEATURES = 10000
 
-mlflow.set_tracking_uri("http://localhost:5000")
+import os
+mlflow.set_tracking_uri(os.environ.get("MLFLOW_TRACKING_URI", "http://localhost:5000"))
 mlflow.set_experiment("sentiment-analysis")
 
 
 # ────────────────────────────────────────────────────────────────
-# 1. Load artifact da fit san (chi con Ngay 6 + Ngay 7, Logistic thang)
-#    Sua duong dan cho khop ten file that trong models/
+# 1. Load pre-trained artifacts (Baseline + Logistic Regression with preprocessing)
+#    Update path to match the actual file name in artifacts/
 # ────────────────────────────────────────────────────────────────
 vectorizer_baseline = joblib.load("artifacts/vectorizer_baseline.pkl")
 model_baseline       = joblib.load("artifacts/model_baseline.pkl")
@@ -25,7 +26,7 @@ model_logreg_clean = joblib.load("artifacts/model_logreg_clean.pkl")
 
 
 # ────────────────────────────────────────────────────────────────
-# 2. Gop vectorizer + model thanh Pipeline (chi dong goi, khong fit lai)
+# 2. Combine vectorizer + model into a Pipeline (packaging only, no refitting)
 # ────────────────────────────────────────────────────────────────
 pipeline_baseline = Pipeline([
     ("tfidf", vectorizer_baseline),
@@ -39,23 +40,23 @@ pipeline_logreg_clean = Pipeline([
 
 
 # ────────────────────────────────────────────────────────────────
-# 3. Log 4 run
+# 3. Log 4 runs
 # ────────────────────────────────────────────────────────────────
 
-# Run 1: Baseline (Ngay 6) - review_baseline, chi lowercase
-#with: khi vào block, run tự mở, sau đó tự đóng mà không cần mlflow.end_run()
-with mlflow.start_run(run_name="baseline_logreg"):  #run là đơn vị nhỏ nhất trong mlflow: đại diện cho 1 lần thí nghiệm (1 lần train xong model)
+# Run 1: Baseline - review_baseline, lowercase only
+# Using 'with' block context manager starts and ends the run automatically
+with mlflow.start_run(run_name="baseline_logreg"):  # A run is the smallest unit in MLflow representing an experiment/training session
     mlflow.log_param("preprocessing", "lowercase only")
     mlflow.log_param("model_type", "LogisticRegression")
-    mlflow.log_param("max_features", MAX_FEATURES)  #các dòng log_param() là điều kiện train (dùng gì, ở đk gì)
+    mlflow.log_param("max_features", MAX_FEATURES)  # log_param() for logging training configurations
     mlflow.log_param("random_state", RANDOM_STATE)
-    mlflow.log_metric("accuracy", 0.8935)  #các dòng log_metric() là kết quả của train
+    mlflow.log_metric("accuracy", 0.8935)  # log_metric() for logging results
     mlflow.log_metric("f1", 0.8951)
     mlflow.log_metric("train_time_seconds", 0.60)
-    mlflow.sklearn.log_model(pipeline_baseline, "model") #log model (lưu model)
+    mlflow.sklearn.log_model(pipeline_baseline, "model") # save the model
 
-# Run 2: Custom preprocessing (Ngay 7) - review_clean
-# -> day la model se duoc dang ky vao Registry (thang ca accuracy va f1)
+# Run 2: Custom preprocessing - review_clean
+# -> this is the model that will be registered in the Registry (best accuracy and f1)
 with mlflow.start_run(run_name="custom_preprocessing_logreg"):
     mlflow.log_param("preprocessing", "teencode + emoji + html cleaning")
     mlflow.log_param("model_type", "LogisticRegression")
@@ -65,9 +66,9 @@ with mlflow.start_run(run_name="custom_preprocessing_logreg"):
     mlflow.log_metric("f1", 0.8969)
     mlflow.log_metric("train_time_seconds", 0.55)
     mlflow.sklearn.log_model(pipeline_logreg_clean, "model")
-    print("Run_id de dang ky Registry:", mlflow.active_run().info.run_id)
+    print("Run_id for Registry:", mlflow.active_run().info.run_id)
 
-# Run 3: SVM (Ngay 8) - khong con artifact .pkl, chi con so lieu
+# Run 3: SVM - artifacts not saved, metrics only
 with mlflow.start_run(run_name="svm_uncalibrated"):
     mlflow.log_param("preprocessing", "teencode + emoji + html cleaning")
     mlflow.log_param("model_type", "LinearSVC (not calibrated)")
@@ -78,7 +79,7 @@ with mlflow.start_run(run_name="svm_uncalibrated"):
     mlflow.log_metric("train_time_seconds", 1.86)
     mlflow.set_tag("artifact_status", "not_saved_metrics_only")
 
-# Run 4: Random Forest (Ngay 8) - tuong tu, khong con artifact
+# Run 4: Random Forest - artifacts not saved, metrics only
 with mlflow.start_run(run_name="random_forest"):
     mlflow.log_param("preprocessing", "teencode + emoji + html cleaning")
     mlflow.log_param("model_type", "RandomForestClassifier")
@@ -89,4 +90,4 @@ with mlflow.start_run(run_name="random_forest"):
     mlflow.log_metric("train_time_seconds", 17.98)
     mlflow.set_tag("artifact_status", "not_saved_metrics_only")
 
-print("Da log xong 4 run. Mo http://localhost:5000 de xem.")
+print("Finished logging 4 runs. Open http://localhost:5000 to view.")

@@ -140,6 +140,13 @@ Confirms the service is up and the production model has been loaded into memory.
 
 A logging failure (e.g. PostgreSQL temporarily down) never surfaces as an error to the client — `/predict` still returns the prediction normally, and the failure is only logged server-side. Logging is a monitoring concern, not a correctness dependency of the core feature.
 
+## Dataset (For Training/Re-running Notebooks)
+
+Because the raw dataset is large, it is ignored via `.gitignore` and not included in this repository. If you want to run the Jupyter notebooks or retrain the models yourself, you need to download the dataset manually:
+
+1. Download the [IMDB Dataset of 50K Movie Reviews](https://www.kaggle.com/datasets/lakshmi25npathi/imdb-dataset-of-50k-movie-reviews) from Kaggle.
+2. Save the extracted `.csv` file as `IMDB Dataset.csv` and place it inside the `data/raw/` directory.
+
 ## Getting Started
 
 Requires Docker Desktop.

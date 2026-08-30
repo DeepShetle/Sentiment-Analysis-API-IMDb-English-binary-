@@ -5,21 +5,21 @@ import logging
 
 load_dotenv()
 
-DATABASE_URL = os.environ["DATABASE_URL"]  # crash sớm nếu thiếu biến env, không âm thầm dùng giá trị mặc định sai
+DATABASE_URL = os.environ["DATABASE_URL"]  # crash early if env var is missing, do not fail silently
 
 
 def get_connection():
-    """Tạo kết nối mới tới PostgreSQL. Dùng context manager khi gọi."""
+    """Create a new PostgreSQL connection. Use as a context manager."""
     return psycopg2.connect(DATABASE_URL)
 
 logger = logging.getLogger(__name__)
 
 def insert_prediction_log(input_text: str, sentiment: str, confidence: float,
                             model_version: str, latency_ms: float) -> None:
-    """Ghi 1 dòng log vào bảng prediction_logs. Lỗi ở đây không đc raise ra ngoài"""
-    try:    #Chặn lỗi khi PostgreSQL sập
+    """Insert a log row into prediction_logs. Errors are suppressed here."""
+    try:    # Suppress errors if PostgreSQL goes down
         conn = get_connection()
-        try:    #Chặn lỗi không ghi được log
+        try:    # Suppress insertion errors
             with conn.cursor() as cur:
                 cur.execute(
                     """
@@ -30,7 +30,7 @@ def insert_prediction_log(input_text: str, sentiment: str, confidence: float,
                     (input_text, sentiment, confidence, model_version, latency_ms),
                 )
             conn.commit()
-        finally:    #Đảm bảo connection vẫn được đóng dù có lỗi
+        finally:    # Ensure connection is closed even on error
             conn.close()
     except Exception as e:
         logger.error(f"Failed to log prediction to database: {e}")

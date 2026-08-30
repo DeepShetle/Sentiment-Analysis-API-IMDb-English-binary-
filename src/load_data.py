@@ -1,5 +1,5 @@
 """
-load_data.py - Load và validate IMDb dataset trước khi cho vào pipeline
+load_data.py - Load and validate IMDb dataset before passing to pipeline
 """
 
 import pandas as pd
@@ -7,52 +7,52 @@ from pathlib import Path
 
 def load_imdb_data(path: str) -> pd.DataFrame:
     """
-    Load IMDb dataset từ file CSV, kiểm tra tính hợp lệ cơ bản.
+    Load IMDb dataset from CSV file, perform basic validity checks.
 
     Args:
-        path: đường dẫn tới file CSV (cột bắt buộc: 'review', 'sentiment')
+        path: path to CSV file (required columns: 'review', 'sentiment')
 
     Returns:
-        DataFrame đã validate, index reset lại từ 0
+        Validated DataFrame, index reset from 0
 
     Raises:
-        FileNotFoundError: nếu file không tồn tại
-        ValueError: nếu thiếu cột bắt buộc, hoặc dữ liệu có vấn đề nghiêm trọng
+        FileNotFoundError: if file doesn't exist
+        ValueError: if required columns are missing, or severe data issues
     """
     file_path = Path(path)
     if not file_path.exists():
         raise FileNotFoundError(
-            f"Không tìm thấy file tại: {path}"
-            f"Tải dataset và đặt vào data/raw/ trước khi run"
+            f"File not found at: {path}\n"
+            f"Download dataset and place it in data/raw/ before running"
         )
     df = pd.read_csv(file_path)
-    #Check schema
+    # Check schema
     requires_cols = {"review", "sentiment"}
     if not requires_cols.issubset(df.columns):
         raise ValueError(
-            f"Thiếu cột bắt buộc. Cần: {requires_cols} có: {set(df.columns)}"
+            f"Missing required columns. Required: {requires_cols} got: {set(df.columns)}"
         )
     
-    #Check null
+    # Check nulls
     n_null = df[["review", "sentiment"]].isnull().sum().sum()
     if n_null > 0:
-        print(f"[WARNING] Có {n_null} giá trị null - sẽ loại bỏ.")
+        print(f"[WARNING] Found {n_null} null values - will be dropped.")
         df = df.dropna(subset=["review", "sentiment"])
-    #check label (only positive/negative)
+    # Check labels (only positive/negative)
     valid_labels = {"positive", "negative"}
-    invalid = set(df["sentiment"].unique()) - valid_labels  #Trả về phần tử chỉ có ở set1 mà không có trong set2
+    invalid = set(df["sentiment"].unique()) - valid_labels  # Returns elements only in set1 that aren't in set2
     if invalid:
-        raise ValueError(f"Có label không hợp lệ: {invalid}")
+        raise ValueError(f"Invalid labels found: {invalid}")
     
-    #check duplicate và loại bỏ duplicate
+    # Check for duplicates and drop them
     n_dup = df.duplicated(subset=["review"]).sum()
     if n_dup > 0:
-        print(f"[INFO] Phát hiện {n_dup} review trùng lặp - sẽ loại bỏ.")
+        print(f"[INFO] Detected {n_dup} duplicate reviews - will be dropped.")
         df = df.drop_duplicates(subset=["review"], keep="first")
     df = df.reset_index(drop=True)
     return df
 def summarize(df: pd.DataFrame) -> None:
-    """In ra thông tin tổng quan để kiểm tra nhanh sau khi load"""
+    """Print overview information for a quick check after loading"""
     print(f"Shape: {df.shape}")
     print(f"Class balance:\n{df['sentiment'].value_counts(normalize=True)}")
     print(f"Review length (words) — min/mean/max:")
