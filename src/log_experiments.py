@@ -1,3 +1,4 @@
+# Deprecated — replaced by src/bootstrap.py for the Docker workflow. Kept for reference/local dev only.
 
 import joblib
 # pyrefly: ignore [missing-import]
