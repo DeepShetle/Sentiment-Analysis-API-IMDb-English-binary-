@@ -175,10 +175,10 @@ and MLflow installs its dependencies. Once ready, visit:
 | API throughput (req/s, local load test) | 135 req/s |
 | API p95 latency | 71 ms |
 
-> While the accuracy improvement was marginal on this dataset, the preprocessing pipeline is expected to matter more for informal user input at inference time — this is a hypothesis to validate once real usage logs are available.
-> Tested locally via Locust (50 concurrent users, 2-minute run) on a single machine
-> Running the full Docker Compose stack (app, MLflow, PostgreSQL) alongside the load
-> Generator — not representative of production infrastructure with dedicated resources.
+> While the accuracy improvement was marginal on this dataset, the preprocessing pipeline is expected to matter more for informal user input at inference time — this is a hypothesis to validate once real usage logs are available. |
+> Tested locally via Locust (50 concurrent users, 2-minute run) on a single machine |
+> Running the full Docker Compose stack (app, MLflow, PostgreSQL) alongside the load |
+> Generator — not representative of production infrastructure with dedicated resources. |
 
 ## Model Training & Experiment Tracking
 
